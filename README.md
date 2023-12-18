@@ -29,7 +29,6 @@ For more information on these repositories, visit:
 To ensure a consistent environment with all necessary dependencies, please create a Conda environment using the provided `fooofpy.yml` file located in `/code/base_code`:
 ```
 conda env create -f /code/base_code/fooofpy.yml
-conda activate your-environment-name
+conda activate fooofpy
 ```
-Replace `your-environment-name` with the name of the Conda environment defined in `fooofpy.yml`.
-After completing these steps, your environment should be set up with all the necessary dependencies to run and analyze the RAM free recall experiments. If you encounter any issues, please feel free to open an issue in this repository.
+After completing these steps, your environment should be set up with all the necessary dependencies to run fooof within the analysis code. If you encounter any issues, please feel free to open an issue in this repository.
