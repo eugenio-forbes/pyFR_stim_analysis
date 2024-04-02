@@ -1,17 +1,14 @@
 function n02_gather_stimulation_info(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% List directories
 subjects_directory = fullfile(root_directory,'subject_files');
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
+list_directory = fullfile(root_directory,'lists');
 
 %%% Load session list
 load(fullfile(list_directory,'session_list.mat'),'session_list');

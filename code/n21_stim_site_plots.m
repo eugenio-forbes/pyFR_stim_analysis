@@ -1,20 +1,20 @@
 function n21_stim_site_plots(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-table_directory = fullfile(analysis_directory,'tables');
-plots_directory = fullfile(analysis_directory,'plots');
-lock_directory = fullfile(analysis_directory,'locks');
-lme_directory = fullfile(analysis_directory,'lme_results');
-resources_directory = fullfile(analysis_directory,'resources');
+table_directory = fullfile(root_directory,'tables');
+list_directory = fullfile(root_directory,'lists');
+plots_directory = fullfile(root_directory,'plots');
+lock_directory = fullfile(root_directory,'locks');
+lme_directory = fullfile(root_directory,'lme_results');
+resources_directory = fullfile(root_directory,'resources');
 
 %%% Declare regions of interest and periods of interest
 stimulation_groups = {'IPL','retrosplenial'};
@@ -27,7 +27,7 @@ periods = periods(Ax(:));
 %%%Initialize parpool
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-    parpool(24)
+    parpool(parpool_n)
 end
 
 parfor idx = 1:n_combos
@@ -52,6 +52,7 @@ parfor idx = 1:n_combos
     lock_file = fullfile(this_lock_directory,[file_name '_lock.txt']);
     done_file = fullfile(this_lock_directory,[file_name '_done.txt']);
     error_file = fullfile(this_lock_directory,[file_name '_error.txt']);
+    mat_file = fullfile(this_lme_directory,[file_name '.mat']);
     plot_file = fullfile(this_plot_directory,file_name);
     
     pause(rand*5)
@@ -63,7 +64,7 @@ parfor idx = 1:n_combos
             electrode_table = load(fullfile(table_directory,[electrode_table_file '.mat']));
             electrode_table = electrode_table.(electrode_table_file);
             
-%             electrode_table = check_bad_subjects(analysis_directory,electrode_table);
+%             electrode_table = check_bad_subjects(root_directory,electrode_table);
             is_IPL = logical(electrode_table.stimulation_lateral);
             if strcmp(stimulation_group,'IPL')
                 same_group = is_IPL;
@@ -95,6 +96,18 @@ parfor idx = 1:n_combos
         end
     end
 end
+
+end
+
+function analysis_table = check_bad_subjects(root_directory,analysis_table)
+exclusion_directory = fullfile(root_directory,'exclusion_lists');
+
+%%% Load subject, session, electrode lists and exclusion lists
+load(fullfile(exclusion_directory,'excluded_subjects.mat'),'excluded_subjects')
+
+bad_subjects = excluded_subjects.subject_ID;
+exclude = ismember(analysis_table.subject_ID,bad_subjects);
+analysis_table(exclude,:) = [];
 
 end
 

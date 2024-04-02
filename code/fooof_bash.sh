@@ -1,18 +1,11 @@
 #!/bin/bash
 
-#Bash script for running fooof algorithm wrapper on different sets of data:
-#-encoding or retrieval period
-#-hippocampus or stim_site data
-#-fooof (all trials) or bosc (trial mean) power spectra
+cd /directory/to/pyFR_stim_analysis/code
 
-#Change directory to folder containing analyisis code
-cd /directory/with/pyFR_stim_analysis/main
+source /directory/to/python/3.6.4-anaconda/etc/profile.d/conda.sh
 
-#Activate conda environment with fooof installation
-source /directory/with/anaconda/etc/profile.d/conda.sh
-conda activate fooof_env
+conda activate fooofpy
 
-#Run fooof wrapper with all combinations of input arguments (task period, site, power spectra type)
 python3 n15_fooof_processing.py encoding hippocampus fooof
 python3 n15_fooof_processing.py encoding hippocampus bosc
 python3 n15_fooof_processing.py retrieval hippocampus fooof

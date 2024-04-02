@@ -1,18 +1,15 @@
 function n03_determine_stimulation_electrode_location(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% List directories
-localization_directory = fullfile(root_directory,'neurologist_localization_folder');
-coordinates_directory = fullfile(root_directory,'coordinates_folder');
-analysis_directory = fullfile(root_directory,username,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
+localization_directory = fullfile(root_directory,'iEEGxfMRI/Pipeline/5crossref');
+coordinates_directory = fullfile(root_directory,'iEEGxfMRI/Pipeline/6finalize');
+list_directory = fullfile(root_directory,'lists');
 
 %%% Option to read MNI coordinates .csv file
 coordinate_opts = delimitedTextImportOptions("NumVariables", 5);

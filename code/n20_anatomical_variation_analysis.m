@@ -1,15 +1,15 @@
 function n20_anatomical_variation_analysis(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
+analysis_directory = fullfile(root_directory,username,analysis_folder_name);
 table_directory = fullfile(analysis_directory,'tables');
 list_directory = fullfile(analysis_directory,'lists');
 plots_directory = fullfile(analysis_directory,'plots');
@@ -31,14 +31,14 @@ periods = periods(Ax(:));
 %%%Initialize parpool
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-    parpool(24)
+    parpool(parpool_n)
 end
 
 for idx = 1:n_combos
     period = periods{idx};
     stimulation_group = stimulation_groups{idx};
     
-    folder_name = 'anatomical_variation_analysis_hippocampus';
+    folder_name = 'anatomical_variation_analysis_hippocampus3';
     this_lme_directory = fullfile(lme_directory,folder_name);
     this_lock_directory = fullfile(lock_directory,folder_name);
     this_plot_directory = fullfile(plots_directory,folder_name);
@@ -61,13 +61,14 @@ for idx = 1:n_combos
     
     pause(rand*5)
     
-    if isfile(lock_file)
+    if ~isfile(lock_file)
         fid = fopen(lock_file,'w'); fclose(fid);
         try
             electrode_table_file = sprintf('%s_band_table',period);
             electrode_table = load(fullfile(table_directory,[electrode_table_file '.mat']));
             electrode_table = electrode_table.(electrode_table_file);
             
+%             electrode_table = check_previous_exclusions(analysis_directory,electrode_table);
             is_IPL = logical(electrode_table.stimulation_lateral);
             if strcmp(stimulation_group,'IPL')
                 same_group = is_IPL;
@@ -79,8 +80,8 @@ for idx = 1:n_combos
             n_electrodes = length(unique(electrode_table.electrode_ID));
             [statistics_table,tstat_box] = get_anatomical_variation_analyses(plot_file,electrode_table);
             save(mat_file,'statistics_table','n_subjects','n_electrodes');
-            do_brain_plots(resources_directory,plot_file,electrode_table,electrode_list);
-            do_box_plots(plot_file,tstat_box,statistics_table);
+%             do_brain_plots(resources_directory,plot_file,electrode_table,electrode_list);
+%             do_box_plots(plot_file,tstat_box,statistics_table);
 
             fid = fopen(done_file,'w'); fclose(fid);
         catch this_error
@@ -91,6 +92,19 @@ for idx = 1:n_combos
         end
     end
 end
+
+end
+
+function electrode_table = check_previous_exclusions(analysis_directory,electrode_table)
+
+exclusion_directory = fullfile(analysis_directory,'exclusion_lists');
+
+%%% Load subject, session, electrode lists and exclusion lists
+load(fullfile(exclusion_directory,'excluded_electrodes.mat'),'excluded_electrodes')
+
+bad_electrodes = excluded_electrodes.electrode_ID;
+exclude = ismember(electrode_table.electrode_ID,bad_electrodes);
+electrode_table(exclude,:) = [];
 
 end
 
@@ -123,6 +137,10 @@ p_value_lme = NaN(n_regions,1);
 n_subjects = NaN(n_regions,1);
 n_electrodes = NaN(n_regions,1);
 degrees_of_freedom = NaN(n_regions,1);
+F_stat = NaN(n_regions,1);
+p_F_stat = NaN(n_regions,1);
+DF_numerator = NaN(n_regions,1);
+DF_denominator = NaN(n_regions,1);
 f_positive = NaN(n_regions,1);
 p_binomial = NaN(n_regions,1);
 
@@ -142,7 +160,7 @@ for idx = 1:n_regions
         case 'right'
             this_electrode_table = electrode_table(is_right,:);
             this_effect_table = stimulation_effect_table(repmat(is_right,2,1),:);
-        case {'anterior-posterior','left_right'}
+        case {'anterior-posterior','left-right'}
             this_electrode_table = electrode_table;
             this_effect_table = stimulation_effect_table;
     end
@@ -157,7 +175,7 @@ for idx = 1:n_regions
             formula = sprintf('power ~ condition*anterior + (%s|subject_ID) + (%s|subject_ID:electrode_ID) + (%s|subject_ID:stimulation_left) + (%s|stimulation_lateral:stimulation_left)',...
                 random_effect,random_effect,random_effect,random_effect);
             statistics_index = 4;
-        case {'left_right'}
+        case {'left-right'}
             formula = sprintf('power ~ condition*left + (%s|subject_ID) + (%s|subject_ID:electrode_ID) + (%s|subject_ID:stimulation_left) + (%s|stimulation_lateral:stimulation_left)',...
                 random_effect,random_effect,random_effect,random_effect);
             statistics_index = 4;
@@ -168,16 +186,22 @@ for idx = 1:n_regions
     n_rows = height(this_electrode_table);
     
     model = fitlme(this_effect_table,formula);
-    t_statistic_lme(idx) = model.Coefficients.tStat(statistics_index);
-    p_value_lme(idx) = model.Coefficients.pValue(statistics_index);
-    degrees_of_freedom(idx) = model.Coefficients.DF(statistics_index);
+    [betas,beta_names,stats] = fixedEffects(model,'DFMethod','satterthwaite','alpha',0.05);
+    H = ones(1,height(beta_names));
+    H(1) = 0;
+    C = H*betas;
+    
+    t_statistic_lme(idx) = stats.tStat(statistics_index);
+    p_value_lme(idx) = stats.pValue(statistics_index);
+    degrees_of_freedom(idx) = stats.DF(statistics_index);
+    [p_F_stat(idx),F_stat(idx),DF_numerator(idx),DF_denominator(idx)] = coefTest(model,H,C,'DFMethod','satterthwaite');
     
     these_t_statistics = this_electrode_table.t_statistic;
     if idx < 5
         tstat_box(1:n_rows,idx) = these_t_statistics;
     end
     
-    [f_positive(idx),p_binomial(idx)] = do_binomial_and_piechart(plot_file,these_t_statistics,this_region);
+%     [f_positive(idx),p_binomial(idx)] = do_binomial_and_piechart(plot_file,these_t_statistics,this_region);
  
 end
 

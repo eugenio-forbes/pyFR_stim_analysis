@@ -1,20 +1,18 @@
 function n09_check_events(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% List directories
 subjects_directory = fullfile(root_directory,'subject_files');
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-data_directory = fullfile(analysis_directory,'data');
-statistics_directory = fullfile(analysis_directory,'statistics');
-exclusion_directory = fullfile(analysis_directory,'exclusion_lists');
+list_directory = fullfile(root_directory,'lists');
+data_directory = fullfile(root_directory,'data');
+statistics_directory = fullfile(root_directory,'statistics');
+exclusion_directory = fullfile(root_directory,'exclusion_lists');
+
 
 %%% Load subject list and excluded subjects so far
 load(fullfile(list_directory,'subject_list.mat'),'subject_list');
@@ -227,8 +225,14 @@ for idx = 1:n_sessions
     if any(contains(events.eegfile,'/Volumes'))
         events.eegfile = strrep(events.eegfile,'/Volumes','');
     end
-    if any(contains(events.eegfile,'/some/bad/pattern'))
-        events.eegfile = strrep(events.eegfile,'/some/bad/pattern','/fixed/pattern');
+    if any(contains(events.eegfile,'/Users/brad/ExperimentData'))
+        events.eegfile = strrep(events.eegfile,'/Users/brad/ExperimentData','/project/TIBIR/Lega_lab/shared/lega_ansir');
+    end
+    if any(contains(events.eegfile,'project/shared'))
+        events.eegfile = strrep(events.eegfile,'project/shared','project/TIBIR/Lega_lab/shared');
+    end
+    if any(contains(events.eegfile,'shared/subjFiles'))
+        events.eegfile = strrep(events.eegfile,'shared/subjFiles','lega_ansir/subjFiles');
     end
     
     %%% Saving a copy of events to analysis directory with the EEG file
@@ -272,7 +276,7 @@ new_excluded_electrodes = electrode_list(ismember(electrode_list.session_ID,new_
 reason_for_exclusion = repelem({'session incomplete'},height(new_excluded_electrodes),1);
 new_excluded_electrodes.reason_for_exclusion = reason_for_exclusion;
 electrode_list = electrode_list(~ismember(electrode_list.session_ID,excluded_sessions.session_ID),:);
-excluded_electrodes = [excluded_electrodes;new_excluded_electrodes]; 
+% excluded_electrodes = [excluded_electrodes;new_excluded_electrodes]; 
 
 %%% Save events info
 events_info = table(subject,task,session,subject_ID,session_ID,word_duration,encoding_duration,math_duration,retrieval_duration,lists,n_conditions);
@@ -317,12 +321,14 @@ for idx = 1:n_subjects
     
     %%% Getting single most complete session. Some subject had incomplete sessions.
     switch this_subject
-        case {'subject_with_better_session_1'}
+        case {'UT018','UT019','UT029','UT034','UT035','UT052','UT064','UT073','UT154'}
             events_file_path = strrep(events_file_path,'session_0','session_1');
-        case {'subject_with_better_session_2'}
+        case {'UT025','UT026','UT053'}
             events_file_path = strrep(events_file_path,'session_0','session_2');
-        case {'subject_with_different_folder'}
-            events_file_path = strrep(events_file_path,'bad_folder','good_folder');
+        case {'UT071','UT075','UT076','UT098','UT114','UT119'}
+            events_file_path = strrep(events_file_path,'events','bipolar_events');
+        case {'UT122'}
+            events_file_path = strrep(events_file_path,'FR1','FR1_with_micros');
     end
     
     %%% Load events and convert to table
@@ -338,10 +344,19 @@ for idx = 1:n_subjects
     if any(contains(events.eegfile,'/Volumes'))
         events.eegfile = strrep(events.eegfile,'/Volumes','');
     end
-    if any(contains(events.eegfile,'/some/bad/pattern'))
-        events.eegfile = strrep(events.eegfile,'/some/bad/pattern','/fixed/pattern');
+    if any(contains(events.eegfile,'/Users/brad/ExperimentData'))
+        events.eegfile = strrep(events.eegfile,'/Users/brad/ExperimentData','/project/TIBIR/Lega_lab/shared/lega_ansir');
     end
-    if any(contains(events.eegfile,'.h5'))
+    if any(contains(events.eegfile,'project/shared'))
+        events.eegfile = strrep(events.eegfile,'project/shared','project/TIBIR/Lega_lab/shared');
+    end
+    if any(contains(events.eegfile,'shared/subjFiles'))
+        events.eegfile = strrep(events.eegfile,'shared/subjFiles','shared/lega_ansir/subjFiles');
+    end
+    if any(contains(events.eegfile,'Lega_lab/lega_ansir'))
+        events.eegfile = strrep(events.eegfile,'Lega_lab/lega_ansir','Lega_lab/shared/lega_ansir');
+    end
+        if any(contains(events.eegfile,'.h5'))
         events.eegfile = strrep(events.eegfile,'.h5','');
     end
     

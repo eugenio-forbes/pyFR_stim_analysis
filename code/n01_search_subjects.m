@@ -1,23 +1,21 @@
 function n01_search_subjects(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/base/directory/with/analysis_folder_name';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    
     %%% Regular expression to search for tasks included in analysis
-    task_name = 'pyFR_stim*'; %* because there were different version of pyFR_stim (* wild card)
-    unwanted_keywords = {'unwanted_keyword'}; %to exclude specific folders
+    task_name = 'pyFR_stim*'; %* because there were different version of pyFR_stim
+    unwanted_keywords = [];
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
-    task_name = varargin{3};
-    unwanted_keywords = varargin{4};
+    task_name = varargin{2};
+    unwanted_keywords = varargin{3};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-search_directory = fullfile(root_directory,'shared/lega_ansir/subjFiles');
-list_directory = fullfile(analysis_directory,'lists');
-exclusion_directory = fullfile(analysis_directory,'exclusion_lists');
+search_directory = fullfile(root_directory,'subject_files');
+list_directory = fullfile(root_directory,'lists');
+exclusion_directory = fullfile(root_directory,'exclusion_lists');
 
 %%% Create directories if needed
 if ~isfolder(list_directory)
@@ -85,15 +83,17 @@ end
 subject_list.has_stim_free_session = has_stim_free_session;
 
 %%% Exclude sessions with unwanted keywords
-has_unwanted_keywords = cellfun(@(x) contains(x,unwanted_keywords,'IgnoreCase',true),session_list.task);
-if sum(has_unwanted_keywords) > 0
-    excluded_sessions = session_list(has_unwanted_keywords,{'subject','task','session','session_ID','subject_ID'});
-    excluded_sessions.reason_for_exclusion = repelem(unwanted_keywords,height(excluded_sessions),1);
-    unique_excluded_subjects = unique(excluded_sessions.subject);
-    excluded_subjects = subject_list(ismember(subject_list.subject,unique_excluded_subjects),{'subject','subject_ID'});
-    excluded_subjects.reason_for_exclusion = repelem(unwanted_keywords,height(excluded_subjects),1);
-    save(fullfile(exclusion_directory,'excluded_subjects.mat'),'excluded_subjects');
-    save(fullfile(exclusion_directory,'excluded_sessions.mat'),'excluded_sessions');
+if ~isempty(unwanted_keywords)
+    has_unwanted_keywords = cellfun(@(x) contains(x,unwanted_keywords,'IgnoreCase',true),session_list.task);
+    if sum(has_unwanted_keywords) > 0
+        excluded_sessions = session_list(has_unwanted_keywords,{'subject','task','session','session_ID','subject_ID'});
+        excluded_sessions.reason_for_exclusion = repelem(unwanted_keywords,height(excluded_sessions),1);
+        unique_excluded_subjects = unique(excluded_sessions.subject);
+        excluded_subjects = subject_list(ismember(subject_list.subject,unique_excluded_subjects),{'subject','subject_ID'});
+        excluded_subjects.reason_for_exclusion = repelem(unwanted_keywords,height(excluded_subjects),1);
+        save(fullfile(exclusion_directory,'excluded_subjects.mat'),'excluded_subjects');
+        save(fullfile(exclusion_directory,'excluded_sessions.mat'),'excluded_sessions');
+    end
 end
 
 %%% Save lists

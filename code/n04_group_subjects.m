@@ -1,16 +1,13 @@
 function n04_group_subjects(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
+list_directory = fullfile(root_directory,'lists');
 
 %%% Load subject list file
 load(fullfile(list_directory,'subject_list.mat'),'subject_list');

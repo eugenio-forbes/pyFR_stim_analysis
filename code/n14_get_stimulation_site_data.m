@@ -1,19 +1,18 @@
 function n14_get_stimulation_site_data(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-data_directory = fullfile(analysis_directory,'data');
-table_directory = fullfile(analysis_directory,'tables');
-error_directory = fullfile(analysis_directory,'error_logs');
+list_directory = fullfile(root_directory,'lists');
+data_directory = fullfile(root_directory,'data');
+table_directory = fullfile(root_directory,'tables');
+error_directory = fullfile(root_directory,'error_logs');
 if ~isfolder(table_directory)
     mkdir(table_directory);
 end
@@ -52,7 +51,7 @@ subject_list.stimulation_left = strcmp(subject_list.stimulation_hemisphere,'left
 %%%Initialize parpool if it hasn't been initialized
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-    parpool(24);
+    parpool(parpool_n);
 end
 
 encoding_stim_site_exclusions = false(n_subjects,1);
@@ -104,24 +103,24 @@ parfor idx = 1:n_subjects
         fprintf(fid,error_message); fclose(fid);
     end
        
-    [error_flag,error_message] = get_fooof_and_bosc_data_stim_site('encoding',encoding_events,electrode_directory,stimulation_electrode_channel,stimulation_references);
-    if ~error_flag
-        encoding_fooof_directories_stim_site{idx} = electrode_directory;
-    else
-        error_file = fullfile(error_directory,sprintf('%s_%d_stim_site_encoding_pre-fBOSC_error.txt',subject,stimulation_electrode_channel));
-        fid = fopen(error_file,'w');
-        fprintf(fid,error_message); fclose(fid);
-    end
-    
-    [error_flag,error_message] = get_fooof_and_bosc_data_stim_site('retrieval',retrieval_events,electrode_directory,stimulation_electrode_channel,stimulation_references);
-    if ~error_flag
-        retrieval_fooof_directories_stim_site{idx} = electrode_directory;
-    else
-        fooof_bosc_stim_site_exclusions(idx) = true;
-        error_file = fullfile(error_directory,sprintf('%s_%d_stim_site_retrieval_pre-fBOSC_error.txt',subject,stimulation_electrode_channel));
-        fid = fopen(error_file,'w');
-        fprintf(fid,error_message); fclose(fid);
-    end
+%     [error_flag,error_message] = get_fooof_and_bosc_data_stim_site('encoding',encoding_events,electrode_directory,stimulation_electrode_channel,stimulation_references);
+%     if ~error_flag
+%         encoding_fooof_directories_stim_site{idx} = electrode_directory;
+%     else
+%         error_file = fullfile(error_directory,sprintf('%s_%d_stim_site_encoding_pre-fBOSC_error.txt',subject,stimulation_electrode_channel));
+%         fid = fopen(error_file,'w');
+%         fprintf(fid,error_message); fclose(fid);
+%     end
+%     
+%     [error_flag,error_message] = get_fooof_and_bosc_data_stim_site('retrieval',retrieval_events,electrode_directory,stimulation_electrode_channel,stimulation_references);
+%     if ~error_flag
+%         retrieval_fooof_directories_stim_site{idx} = electrode_directory;
+%     else
+%         fooof_bosc_stim_site_exclusions(idx) = true;
+%         error_file = fullfile(error_directory,sprintf('%s_%d_stim_site_retrieval_pre-fBOSC_error.txt',subject,stimulation_electrode_channel));
+%         fid = fopen(error_file,'w');
+%         fprintf(fid,error_message); fclose(fid);
+%     end
 end
 
 %%% Concatenate all data to make tables ready for analysis
@@ -133,16 +132,16 @@ save(fullfile(table_directory,'encoding_stim_site_table.mat'),'encoding_stim_sit
 save(fullfile(table_directory,'retrieval_stim_site_table.mat'),'retrieval_stim_site_table','-v7.3');
 
 %%% Print non-empty fooof data directories to text file in list directory
-empty_cells = cellfun(@isempty,encoding_fooof_directories_stim_site);
-encoding_fooof_directories_stim_site(empty_cells) = [];
-writecell(encoding_fooof_directories_stim_site,fullfile(list_directory,'encoding_fooof_directories_stim_site.txt'))
-
-empty_cells = cellfun(@isempty,retrieval_fooof_directories_stim_site);
-retrieval_fooof_directories_stim_site(empty_cells) = [];
-writecell(retrieval_fooof_directories_stim_site,fullfile(list_directory,'retrieval_fooof_directories_stim_site.txt'))
+% empty_cells = cellfun(@isempty,encoding_fooof_directories_stim_site);
+% encoding_fooof_directories_stim_site(empty_cells) = [];
+% writecell(encoding_fooof_directories_stim_site,fullfile(list_directory,'encoding_fooof_directories_stim_site.txt'))
+% 
+% empty_cells = cellfun(@isempty,retrieval_fooof_directories_stim_site);
+% retrieval_fooof_directories_stim_site(empty_cells) = [];
+% writecell(retrieval_fooof_directories_stim_site,fullfile(list_directory,'retrieval_fooof_directories_stim_site.txt'))
 
 %%% Save exclusions to list_directory
-save(fullfile(list_directory,'stim_site_exclusions.mat'),'encoding_stim_site_exclusions','retrieval_stim_site_exclusions','fooof_bosc_stim_site_exclusions');
+% save(fullfile(list_directory,'stim_site_exclusions.mat'),'encoding_stim_site_exclusions','retrieval_stim_site_exclusions','fooof_bosc_stim_site_exclusions');
 end
 
 function events = load_events_copy(events_file)
@@ -307,131 +306,131 @@ mean_event_power = squeeze(mean(event_power,3));
 power = stats.tstat;
 end
 
-function [error_flag,error_message] = get_fooof_and_bosc_data_stim_site(event_type,events,saving_directory,stimulation_electrode_channel,stimulation_references)
-%%% Initialize output variables
-error_flag = false;
-error_message = [];
-
-try
-    %%% Signal parameters
-    %%% signal acquired at 1000 Hz, not resampling
-    sampling_rate = 1000;
-    nyquist = sampling_rate/2;
-    padding = 2000; %%% in ms, flanking periods of segment (BOSC recommends 2 sets of 1000 pads for their algorithm)
-    
-    switch event_type
-        case 'encoding'
-            duration = 1600; %%% in ms, the time of the baseline period (500ms) + 1500ms of word presentation + 100ms shortly after disappearance
-            offset = 0; %%% in ms, prior to word display to acquire singal
-            event_indices = [1+padding,duration+padding];
-        case 'retrieval'
-            duration = 1000; %%% time for baseline period (500ms) + 1000 ms prior to onset of verbalization of item in recall
-            offset = -1000; %%% time prior to onset of verbalization
-            event_indices = [1+padding,duration+padding];
-    end
-    
-    %%% Parameters for exclusion of events
-    kurtosis_threshold = 4;
-    
-    %%% Filtering parameters to highpass (0.5Hz)
-    %%% Only high pass filtering to perform rereferncing. Avoiding other
-    %%% filters to minimize distortions of the signal and the spectrum.
-    %%% Aiming to reduce noise with rereferencing. Only fitting frequencies
-    %%% from 2 to
-    filter_order = 3;
-    highpass_frequency = 0.5;
-
-    %%% Parameters for wavelet convolution
-    %%%Since power was calculated for 5000ms or more, conserving a
-    %%%frequency resolution of 0.25 for generating power spectra. Fitting
-    %%% 1 to 40 to minimize influence of line noise power in fitting of
-    %%% aperiodic component. fooof requires linearly increasing frequencies
-    frequencies = 1:0.25:45;
-    width = 6; % width of the wavelet for wavelet convolution
-    
-    %%% Convert events to struct if needed
-    if istable(events)
-        events = table2struct(events);
-    end
-    
-    n_events = length(events);
-    
-    %%%% Make array of indices to keep track of which events remained after
-    %%%% processing
-    good_indices = 1:n_events;
-    bad_eeg_offset = [events.eegoffset] + offset - padding < 0;
-    good_indices(bad_eeg_offset) = [];
-    events(bad_eeg_offset) = [];
-    
-    %%% Remove any offset and drift from signals with highpass over 0.5Hz prior to referencing
-    [highpass_b,highpass_a] = butter(filter_order,highpass_frequency/nyquist,'high');
-    
-    %%% Get hippocampal eeg
-    stim_site_eeg = gete_ms(stimulation_electrode_channel,events,duration+(padding*2),offset-padding,0);
-    stim_site_eeg = filtfilt(highpass_b,highpass_a,stim_site_eeg')';
-    
-    %%% Gather eegs for reference channels
-    reference_eegs = NaN(length(events),duration+(padding*2),length(stimulation_references));
-    for idx = 1:length(stimulation_references)
-        temp_reference_eeg = gete_ms(stimulation_references(idx),events,duration+(padding*2),offset-padding,0);
-        temp_reference_eeg = filtfilt(highpass_b,highpass_a,temp_reference_eeg')';
-        reference_eegs(:,:,idx) = temp_reference_eeg; clear temp_reference_eeg;
-    end
-    
-    %%% Subtract mean of reference channels to get referenced stim_site eeg
-    stim_site_eeg = stim_site_eeg - squeeze(mean(reference_eegs,3));
-    
-    %%% Identify events that exceed kurtosis threshold
-    kurtosis_values = kurtosis(stim_site_eeg(:,padding+1:end-padding)');
-    nan_values = isnan(kurtosis_values);
-    if all(nan_values)
-        error('All kurtosis values NaN.');
-    end
-    
-    bad_kurtosis_indices = isnan(kurtosis_values) | kurtosis_values > kurtosis_threshold;
-    good_indices(bad_kurtosis_indices) = [];
-    stim_site_eeg(bad_kurtosis_indices,:) = [];
-    
-    if length(good_indices) < ceil(n_events/2)
-        error('More than half of the events were thrown out.');
-    end
-    
-    root_median_square = sqrt(sum((stim_site_eeg - median(stim_site_eeg,2)).^2,2));
-    artifactual = root_median_square >= prctile(root_median_square,95);
-    
-    good_indices(artifactual) = [];
-    stim_site_eeg(artifactual,:) = [];
-    
-    if length(good_indices) < ceil(n_events/2)
-        error('More than half of the events were thrown out.');
-    end
-    
-    %%% Get the raw power
-    [~,raw_power] = multiphasevec3(frequencies,stim_site_eeg,sampling_rate,width);
-    
-    %%% Get arithmetic mean across time to get power spectra for fooof
-    power_spectra = squeeze(mean(raw_power(:,:,event_indices(1):event_indices(end)),3));
-    
-    %%% Get geometric mean for fitting aperiodic component to calculate
-    %%% power threshold for fBOSC
-    mean_power_spectrum = 10.^(squeeze(mean(log10(raw_power(:,:,event_indices(1):event_indices(end))),[1 3])));
-    
-    %%% Save data for fooof
-    fooof_directory = fullfile(saving_directory,sprintf('%s_fooof',event_type));
-    if ~isfolder(fooof_directory)
-        mkdir(fooof_directory);
-    end
-    save(fullfile(fooof_directory,'data.mat'),'power_spectra','frequencies','-v7.3');
-
-    %%% Save data for fBOSC
-    bosc_directory = fullfile(saving_directory,sprintf('%s_bosc',event_type));
-    if ~isfolder(bosc_directory)
-        mkdir(bosc_directory);
-    end
-    save(fullfile(bosc_directory,'data.mat'),'mean_power_spectrum','frequencies','good_indices','padding','event_indices','-v7.3');
-    
-catch this_error %%% Error could also result from power extraction
-    error_flag = true;
-    error_message = getReport(this_error, 'extended', 'hyperlinks', 'off');
-end
-end
+% function [error_flag,error_message] = get_fooof_and_bosc_data_stim_site(event_type,events,saving_directory,stimulation_electrode_channel,stimulation_references)
+% %%% Initialize output variables
+% error_flag = false;
+% error_message = [];
+% 
+% try
+%     %%% Signal parameters
+%     %%% signal acquired at 1000 Hz, not resampling
+%     sampling_rate = 1000;
+%     nyquist = sampling_rate/2;
+%     padding = 2000; %%% in ms, flanking periods of segment (BOSC recommends 2 sets of 1000 pads for their algorithm)
+%     
+%     switch event_type
+%         case 'encoding'
+%             duration = 1600; %%% in ms, the time of the baseline period (500ms) + 1500ms of word presentation + 100ms shortly after disappearance
+%             offset = 0; %%% in ms, prior to word display to acquire singal
+%             event_indices = [1+padding,duration+padding];
+%         case 'retrieval'
+%             duration = 1000; %%% time for baseline period (500ms) + 1000 ms prior to onset of verbalization of item in recall
+%             offset = -1000; %%% time prior to onset of verbalization
+%             event_indices = [1+padding,duration+padding];
+%     end
+%     
+%     %%% Parameters for exclusion of events
+%     kurtosis_threshold = 4;
+%     
+%     %%% Filtering parameters to highpass (0.5Hz)
+%     %%% Only high pass filtering to perform rereferncing. Avoiding other
+%     %%% filters to minimize distortions of the signal and the spectrum.
+%     %%% Aiming to reduce noise with rereferencing. Only fitting frequencies
+%     %%% from 2 to
+%     filter_order = 3;
+%     highpass_frequency = 0.5;
+% 
+%     %%% Parameters for wavelet convolution
+%     %%%Since power was calculated for 5000ms or more, conserving a
+%     %%%frequency resolution of 0.25 for generating power spectra. Fitting
+%     %%% 1 to 40 to minimize influence of line noise power in fitting of
+%     %%% aperiodic component. fooof requires linearly increasing frequencies
+%     frequencies = 1:0.25:45;
+%     width = 6; % width of the wavelet for wavelet convolution
+%     
+%     %%% Convert events to struct if needed
+%     if istable(events)
+%         events = table2struct(events);
+%     end
+%     
+%     n_events = length(events);
+%     
+%     %%%% Make array of indices to keep track of which events remained after
+%     %%%% processing
+%     good_indices = 1:n_events;
+%     bad_eeg_offset = [events.eegoffset] + offset - padding < 0;
+%     good_indices(bad_eeg_offset) = [];
+%     events(bad_eeg_offset) = [];
+%     
+%     %%% Remove any offset and drift from signals with highpass over 0.5Hz prior to referencing
+%     [highpass_b,highpass_a] = butter(filter_order,highpass_frequency/nyquist,'high');
+%     
+%     %%% Get hippocampal eeg
+%     stim_site_eeg = gete_ms(stimulation_electrode_channel,events,duration+(padding*2),offset-padding,0);
+%     stim_site_eeg = filtfilt(highpass_b,highpass_a,stim_site_eeg')';
+%     
+%     %%% Gather eegs for reference channels
+%     reference_eegs = NaN(length(events),duration+(padding*2),length(stimulation_references));
+%     for idx = 1:length(stimulation_references)
+%         temp_reference_eeg = gete_ms(stimulation_references(idx),events,duration+(padding*2),offset-padding,0);
+%         temp_reference_eeg = filtfilt(highpass_b,highpass_a,temp_reference_eeg')';
+%         reference_eegs(:,:,idx) = temp_reference_eeg; clear temp_reference_eeg;
+%     end
+%     
+%     %%% Subtract mean of reference channels to get referenced stim_site eeg
+%     stim_site_eeg = stim_site_eeg - squeeze(mean(reference_eegs,3));
+%     
+%     %%% Identify events that exceed kurtosis threshold
+%     kurtosis_values = kurtosis(stim_site_eeg(:,padding+1:end-padding)');
+%     nan_values = isnan(kurtosis_values);
+%     if all(nan_values)
+%         error('All kurtosis values NaN.');
+%     end
+%     
+%     bad_kurtosis_indices = isnan(kurtosis_values) | kurtosis_values > kurtosis_threshold;
+%     good_indices(bad_kurtosis_indices) = [];
+%     stim_site_eeg(bad_kurtosis_indices,:) = [];
+%     
+%     if length(good_indices) < ceil(n_events/2)
+%         error('More than half of the events were thrown out.');
+%     end
+%     
+%     root_median_square = sqrt(sum((stim_site_eeg - median(stim_site_eeg,2)).^2,2));
+%     artifactual = root_median_square >= prctile(root_median_square,95);
+%     
+%     good_indices(artifactual) = [];
+%     stim_site_eeg(artifactual,:) = [];
+%     
+%     if length(good_indices) < ceil(n_events/2)
+%         error('More than half of the events were thrown out.');
+%     end
+%     
+%     %%% Get the raw power
+%     [~,raw_power] = multiphasevec3(frequencies,stim_site_eeg,sampling_rate,width);
+%     
+%     %%% Get arithmetic mean across time to get power spectra for fooof
+%     power_spectra = squeeze(mean(raw_power(:,:,event_indices(1):event_indices(end)),3));
+%     
+%     %%% Get geometric mean for fitting aperiodic component to calculate
+%     %%% power threshold for fBOSC
+%     mean_power_spectrum = 10.^(squeeze(mean(log10(raw_power(:,:,event_indices(1):event_indices(end))),[1 3])));
+%     
+%     %%% Save data for fooof
+%     fooof_directory = fullfile(saving_directory,sprintf('%s_fooof',event_type));
+%     if ~isfolder(fooof_directory)
+%         mkdir(fooof_directory);
+%     end
+%     save(fullfile(fooof_directory,'data.mat'),'power_spectra','frequencies','-v7.3');
+% 
+%     %%% Save data for fBOSC
+%     bosc_directory = fullfile(saving_directory,sprintf('%s_bosc',event_type));
+%     if ~isfolder(bosc_directory)
+%         mkdir(bosc_directory);
+%     end
+%     save(fullfile(bosc_directory,'data.mat'),'mean_power_spectrum','frequencies','good_indices','padding','event_indices','-v7.3');
+%     
+% catch this_error %%% Error could also result from power extraction
+%     error_flag = true;
+%     error_message = getReport(this_error, 'extended', 'hyperlinks', 'off');
+% end
+% end

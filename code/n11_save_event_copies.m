@@ -1,17 +1,15 @@
 function n11_save_event_copies(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% Declare directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-data_directory = fullfile(analysis_directory,'data');
+list_directory = fullfile(root_directory,'lists');
+data_directory = fullfile(root_directory,'data');
+FR1_data_directory = fullfile(root_directory,'FR1_data');
 
 %%% Load subject list
 load(fullfile(list_directory,'subject_list.mat'),'subject_list');
@@ -43,6 +41,7 @@ for idx = 1:n_sessions
     events_file = fullfile(session_directory,'events.mat');
     load(events_file,'events')
     
+    events = struct2table(events);
     %%% Remove events with empty eegoffset or offset less than 0. Not done
     %%% previously to conserve all behavioral data
     no_file_or_offset = strcmp(events.eegfile,'') | isempty(events.eegoffset) | events.eegoffset <0;
@@ -71,9 +70,10 @@ for idx = 1:n_subjects
     all_channels = [channel_numbers;stimulation_electrode_channel];
     
     %%% Load events. These save events copies have already been converted to table
-    session_directory = fullfile(data_directory,subject,'FR1');
+    session_directory = fullfile(FR1_data_directory,subject);
     events_file = fullfile(session_directory,'events.mat');
     load(events_file,'events')
+    events = struct2table(events);
     
     %%% Remove events with empty eegoffset or offset less than 0.
     no_file_or_offset = strcmp(events.eegfile,'') | isempty(events.eegoffset) | events.eegoffset <0;

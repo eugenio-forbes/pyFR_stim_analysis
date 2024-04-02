@@ -1,19 +1,18 @@
 function n19_encoding_vs_retrieval_analysis(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-table_directory = fullfile(analysis_directory,'tables');
-plots_directory = fullfile(analysis_directory,'plots');
-lock_directory = fullfile(analysis_directory,'locks');
-lme_directory = fullfile(analysis_directory,'lme_results');
+table_directory = fullfile(root_directory,'tables');
+plots_directory = fullfile(root_directory,'plots');
+lock_directory = fullfile(root_directory,'locks');
+lme_directory = fullfile(root_directory,'lme_results');
 
 %%% Declare regions of interest and periods of interest
 anatomical_regions = {'anterior','posterior'};
@@ -28,7 +27,7 @@ stimulation_groups = stimulation_groups(Ax(:));
 analysis_table_file = 'encoding_vs_retrieval_analysis_table';
 analysis_table = load(fullfile(table_directory,[analysis_table_file '.mat']));
 analysis_table = analysis_table.(analysis_table_file);
-analysis_table = check_previous_exclusions(analysis_directory,analysis_table);
+analysis_table = check_previous_exclusions(root_directory,analysis_table);
 is_left = logical(analysis_table.left);
 is_anterior = logical(analysis_table.anterior);
 stimulation_left = logical(analysis_table.stimulation_left);
@@ -37,7 +36,7 @@ ipsilateral = (stimulation_left & is_left) | (~stimulation_left & ~is_left);
 %%%Initialize parpool
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-    parpool(24)
+    parpool(parpool_n)
 end
 
 for idx = 1:n_combos
@@ -116,8 +115,8 @@ end
 
 end
 
-function analysis_table = check_previous_exclusions(analysis_directory,analysis_table)
-exclusion_directory = fullfile(analysis_directory,'exclusion_lists');
+function analysis_table = check_previous_exclusions(root_directory,analysis_table)
+exclusion_directory = fullfile(root_directory,'exclusion_lists');
 
 %%% Load subject, session, electrode lists and exclusion lists
 load(fullfile(exclusion_directory,'excluded_electrodes.mat'),'excluded_electrodes')

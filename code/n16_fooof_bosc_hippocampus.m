@@ -1,18 +1,17 @@
 function n16_fooof_bosc_hippocampus(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-table_directory = fullfile(analysis_directory,'tables');
-plots_directory = fullfile(analysis_directory,'plots');
+list_directory = fullfile(root_directory,'lists');
+table_directory = fullfile(root_directory,'tables');
+plots_directory = fullfile(root_directory,'plots');
 
 %%% Load electrode list to associate fooof and bosc data with electrode information
 load(fullfile(list_directory,'electrode_list.mat'),'electrode_list');
@@ -23,7 +22,7 @@ periods = {'encoding';'retrieval'};
 %%%Initialize parpool
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-    parpool(36)
+    parpool(parpool_n)
 end
 
 for idx = 1:length(periods)
@@ -46,7 +45,7 @@ for idx = 1:length(periods)
     make_aperiodic_plot(plots_directory,aperiodic_table,period);
     make_bosc_p_episode_plots(plots_directory,bosc_table,period,frequencies);
     
-%     clean_up(electrode_directories,period);
+    clean_up(electrode_directories,period);
 end
 
 end
@@ -687,5 +686,20 @@ for idx = 1:n_combos
         close all
     end
     
+end
+end
+
+function clean_up(electrode_directories,period)
+n_directories = length(electrode_directories);
+parfor idx = 1:n_directories
+    electrode_directory = electrode_directories{idx};
+    fooof_directory = fullfile(electrode_directory,sprintf('%s_fooof',period));
+    bosc_directory = fullfile(electrode_directory,sprintf('%s_bosc',period));
+    if isfolder(fooof_directory)
+        rmdir(fooof_directory,'s');
+    end
+    if isfolder(bosc_directory)
+        rmdir(bosc_directory,'s');
+    end
 end
 end

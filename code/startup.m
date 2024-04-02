@@ -1,2 +1,2 @@
-addpath(genpath('/directory/with/analysis_folder/main'));
-cd '/directory/with/analysis_folder'
+addpath(genpath('/directory/to/pyFR_stim_analysis/code'));
+cd '/directory/to/pyFR_stim_analysis'

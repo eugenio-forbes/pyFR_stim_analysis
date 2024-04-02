@@ -1,0 +1,5 @@
+En este estudio, aparecerán palabras en la pantalla del ordenador . Como se muestra cada palabra por favor decirlo en voz alta .
+
+Después de la última palabra en cada lista , verá una serie de problemas de matemáticas. Por favor, realice los problemas de matemáticas a lo mejor de su capacidad .
+
+Después de los problemas de matemáticas , una fila de asteriscos ( ******* ) parpadeará en la pantalla y se escuchará un tono. En este momento, dicen tantas palabras como usted puede recordar de la lista , en cualquier orden . Cuando haya terminado la recuperación, pulse la barra espaciadora.

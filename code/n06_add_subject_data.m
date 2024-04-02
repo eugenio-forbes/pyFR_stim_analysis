@@ -1,24 +1,21 @@
 function n06_add_subject_data(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-resource_directory = fullfile(analysis_directory,'resources');
+list_directory = fullfile(root_directory,'lists');
+resource_directory = fullfile(root_directory,'resources');
 
 %%% Specify import options for excel sheet with subject data
-excel_file_options = spreadsheetImportOptions('NumVariables', 43);
+excel_file_options = spreadsheetImportOptions('NumVariables', 42);
 excel_file_options.Sheet = 'pyFR_stim_subject_data_binary';
-excel_file_options.DataRange = 'A2:AQ81';
+excel_file_options.DataRange = 'A2:AP81';
 excel_file_options.VariableNames = ...
-    {'UT_ID', 'Penn_ID', 'Age', 'Onset', 'Female', ...                             %%% UT and Penn subject ID's, age at SEEG implant, age of seizure onset, whether female (logical)
+    {'Subject', 'Age', 'Onset', 'Female', ...                             %%% UT and Penn subject ID's, age at SEEG implant, age of seizure onset, whether female (logical)
     'White','Black', 'Hispanic', 'Right_Handed', 'Left_Dominant',...               %%% logicals for race groups, handedness, and hemisphere with language dominance
     'Heterotopia','Infarcts', 'Infectious', 'Febrile', 'Dysplasia',...             %%% logicals for etiologies
     'Encephalomalacia','Cavernoma', 'Cystic', 'AVM', 'Atrophy',...                 %%% logicals for etiologies
@@ -28,7 +25,7 @@ excel_file_options.VariableNames = ...
     'FSIQ', 'VCI', 'PRI', 'VLT_Short', 'VLT_Long', 'VLT_Total',...                 %%% range descriptors for full-scale IQ, verbal comprehension index, perceptual reasoning index, verbal learning test (short/long delay and total)
     'Depression','Ictal', 'Interictal'};                                           %%% range descriptor for symptoms of depression, channel labels of ictal onset, channel labels of interictal spikes (only selective parietal and mesial temporal included)
 excel_file_options.VariableTypes = ...
-    {'char', 'char', 'double', 'double', 'logical',...
+    {'char', 'double', 'double', 'logical',...
     'logical', 'logical', 'logical', 'logical', 'double',...                       %%% Saving 'Left_Dominant' as double to exclude the few cases with no language dominance testing done (fMRI,WADA)
     'logical', 'logical', 'logical', 'logical', 'logical',...
     'logical', 'logical', 'logical', 'logical', 'logical',...
@@ -37,8 +34,8 @@ excel_file_options.VariableTypes = ...
     'char', 'char', 'char', 'double',...
     'char', 'char', 'char', 'char', 'char', 'char',...
     'char', 'char', 'char'};
-excel_file_options = setvaropts(excel_file_options, 'UT_ID', 'WhitespaceRule', 'preserve');
-excel_file_options = setvaropts(excel_file_options, {'UT_ID', 'MRI_abnormalities', 'MRI_lateralization', 'MRI_distribution', 'FSIQ', 'VCI', 'PRI', 'VLT_Short', 'VLT_Long', 'VLT_Total', 'Depression', 'Ictal', 'Interictal'}, 'EmptyFieldRule', 'auto');
+excel_file_options = setvaropts(excel_file_options, 'Subject', 'WhitespaceRule', 'preserve');
+excel_file_options = setvaropts(excel_file_options, {'Subject', 'MRI_abnormalities', 'MRI_lateralization', 'MRI_distribution', 'FSIQ', 'VCI', 'PRI', 'VLT_Short', 'VLT_Long', 'VLT_Total', 'Depression', 'Ictal', 'Interictal'}, 'EmptyFieldRule', 'auto');
 
 %%% Import subject data from excel file
 subject_data_file = fullfile(resource_directory,'pyFR_stim_subject_data_binary.xlsx');
@@ -55,9 +52,9 @@ load(fullfile(list_directory,'electrode_list.mat'),'electrode_list');
 
 %%% Get matching indices to filter and resort table, then merge with
 %%% subject list.
-subject_indices = cellfun(@(x) find(strcmp(subject_data.UT_ID,x(1:5))),subject_list.subject);
+subject_indices = cellfun(@(x) find(strcmp(subject_data.Subject,x(1:5))),subject_list.subject);
 subject_data = subject_data(subject_indices,:);
-subject_data.UT_ID = [];
+subject_data.Subject = [];
 subject_list = [subject_list,subject_data];
 
 %%% Classify electrodes as ictal onset zone or interictal spiking zone

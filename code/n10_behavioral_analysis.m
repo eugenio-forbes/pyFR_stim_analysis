@@ -1,20 +1,19 @@
 function n10_behavioral_analysis(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-resources_directory = fullfile(analysis_directory,'resources');
-data_directory = fullfile(analysis_directory,'data');
-statistics_directory = fullfile(analysis_directory,'statistics');
-plots_directory = fullfile(analysis_directory,'plots/behavioral');
+list_directory = fullfile(root_directory,'lists');
+resources_directory = fullfile(root_directory,'resources');
+data_directory = fullfile(root_directory,'data');
+statistics_directory = fullfile(root_directory,'statistics');
+plots_directory = fullfile(root_directory,'plots/behavioral');
 if ~isfolder(statistics_directory)
     mkdir(statistics_directory);
 end
@@ -55,7 +54,7 @@ primacy_array = cell(n_combos,1);
 %%% Initialize parpool
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-%     parpool(24);
+    parpool(parpool_n);
 end
 
 %%% Loop through sessions to gather behavioral data from events
@@ -106,8 +105,8 @@ save(fullfile(statistics_directory,'any_stimulation_table.mat'),'any_stimulation
 
 %%% Declare stimulation periods, regions, hemispheres; and behavioral
 %%% metrics for LME analyses
-stimulation_periods = {'encoding','retrieval'}%,'either'};
-hemispheres = {'either'};%,'left','right'};
+stimulation_periods = {'encoding','retrieval','either'};
+hemispheres = {'either','left','right'};
 stimulation_groups = {'IPL','retrosplenial'};
 variables = {'total_intrusions','TCF','SCF','overall_percent_recall','total_PLIs','total_XLIs',...
     'n_recalls','primacy'};
@@ -124,6 +123,8 @@ n_subjects = NaN(n_combos,1);
 tstat = NaN(n_combos,1);
 pvalue = NaN(n_combos,1);
 df = NaN(n_combos,1);
+F_stat = NaN(n_combos,1);
+F_pval = NaN(n_combos,1);
 
 %%% Loop through all combinations
 for idx = 1:n_combos
@@ -208,15 +209,20 @@ for idx = 1:n_combos
     %%% from effect.
     if ~isempty(analysis_table)
         lme_model = fitlme(analysis_table,final_formula);
-        tstat(idx) = lme_model.Coefficients.tStat(statistics_index);
-        pvalue(idx) = lme_model.Coefficients.pValue(statistics_index);
-        df(idx) = lme_model.Coefficients.DF(statistics_index);
+        [betas,beta_names,stats] = fixedEffects(lme_model,'DFMethod','satterthwaite','alpha',0.05);
+        H = ones(1,height(beta_names));
+        H(1) = 0;
+        C = H*betas;
+        tstat(idx) = stats.tStat(statistics_index);
+        pvalue(idx) = stats.pValue(statistics_index);
+        df(idx) = stats.DF(statistics_index);
+        [F_pval(idx),F_stat(idx),~,~] = coefTest(lme_model,H,C,'DFMethod','satterthwaite');
     end
 end
 
 %%% Make table for stimulation effects with preallocated columns and save
 behavioral_stimulation_effects = table(behavioral_metric,stimulation_group,...
-    stimulation_hemisphere,stimulation_period,n_subjects,tstat,pvalue,df);
+    stimulation_hemisphere,stimulation_period,n_subjects,tstat,pvalue,df,F_stat,F_pval);
 save(fullfile(statistics_directory,'behavioral_stimulation_effects.mat'),'behavioral_stimulation_effects');
 clear behavioral metric stimulation_region stimulation_hemisphere 
 clear stimulation_period n_subjects tstat pvalue df
@@ -236,6 +242,8 @@ df = NaN(n_combos,1);
 tstat_control = NaN(n_combos,1);
 pvalue_control = NaN(n_combos,1);
 df_control = NaN(n_combos,1);
+F_stat_control = NaN(n_combos,1);
+F_pval_control = NaN(n_combos,1);
 control_index = 2;
 
 %%% Loop through all combinations
@@ -314,18 +322,23 @@ parfor idx = 1:n_combos
     %%% from effect.
     if ~isempty(interaction_analysis_table)
         lme_model = fitlme(interaction_analysis_table,final_formula);
-        tstat(idx) = lme_model.Coefficients.tStat(interaction_statistics_index);
-        pvalue(idx) = lme_model.Coefficients.pValue(interaction_statistics_index);
-        df(idx) = lme_model.Coefficients.DF(interaction_statistics_index);
-        tstat_control(idx) = lme_model.Coefficients.tStat(control_index);
-        pvalue_control(idx) = lme_model.Coefficients.pValue(control_index);
-        df_control(idx) = lme_model.Coefficients.DF(control_index);
+        [betas,beta_names,stats] = fixedEffects(lme_model,'DFMethod','satterthwaite','alpha',0.05);
+        H = ones(1,height(beta_names));
+        H(1) = 0;
+        C = H*betas;
+        tstat(idx) = stats.tStat(interaction_statistics_index);
+        pvalue(idx) = stats.pValue(interaction_statistics_index);
+        df(idx) = stats.DF(interaction_statistics_index);
+        tstat_control(idx) = stats.tStat(control_index);
+        pvalue_control(idx) = stats.pValue(control_index);
+        df_control(idx) = stats.DF(control_index);
+        [F_pval_control(idx),F_stat_control(idx),~,~] = coefTest(lme_model,H,C,'DFMethod','satterthwaite');
     end
 end
 
 %%% Make table for stimulation intereactions with preallocated columns and save
 behavioral_interactions = table(behavioral_metric,stimulation_period,...
-    n_subjects_IPL,n_subjects_RS,tstat,pvalue,df,tstat_control,pvalue_control,df_control);
+    n_subjects_IPL,n_subjects_RS,tstat,pvalue,df,tstat_control,pvalue_control,df_control,F_stat_control,F_pval_control);
 save(fullfile(statistics_directory,'behavioral_interactions.mat'),'behavioral_interactions');
 clear behavioral_metric stimulation_period n_subjects_IPL n_subjects_RS tstat pvalue df
 clear n_recalls_table primacy_table
@@ -383,6 +396,8 @@ session = session_info.session{:};
 
 events_file = fullfile(data_directory,subject,task,session,'events.mat');
 load(events_file,'events');
+
+events = struct2table(events);
 
 %%% Get encoding and retrieval events of the corresponding condition.
 %%% Get list numbers of corresponding lists and number of lists.
@@ -464,20 +479,40 @@ for idx = 1:n_lists
     this_list_encoding = encoding_events(is_this_list,:);
     is_this_list = retrieval_events.list == list_number;
     not_intrusion = retrieval_events.intrusion == 0;
-    this_list_retrieval = retrieval_events(is_this_list&not_intrusion,:);
+    good_number = retrieval_events.itemno > 0;
+    this_list_retrieval = retrieval_events(is_this_list&not_intrusion&good_number,:);
     
     recalled = this_list_encoding.recalled;
     
     recalls_matrix(idx,:) = recalled;
-    encoding_item_numbers(idx,:) = this_list_encoding.itemno;
+    encoding_items = this_list_encoding.itemno;
+    change = ~ismember(encoding_items,1:308);
+    changed_items = encoding_items(change);
+    changed_to = ceil(rand(sum(change),1)*307)+1;
+    encoding_items(change) = changed_to;
+    encoding_item_numbers(idx,:) = encoding_items;
+    this_list_encoding.itemno = encoding_items;
+    
+    retrieval_items = this_list_retrieval.itemno;
+    if any(ismember(retrieval_items,changed_items))
+        for jdx = 1:length(retrieval_items)
+            if ismember(retrieval_items(jdx),changed_items)
+                retrieval_items(jdx) = changed_to(ismember(changed_items,retrieval_items(jdx)));
+            end
+        end
+    end
+    this_list_retrieval.itemno = retrieval_items;
     
     recalled_items = this_list_encoding(logical(recalled),:);
     n_recalled_items = height(this_list_retrieval);
     indices = arrayfun(@(x) find(recalled_items.itemno==x),this_list_retrieval.itemno);
     
     recalls_serial_positions(idx,1:n_recalled_items) = recalled_items.serialpos(indices);
-    recalls_item_numbers(idx,1:n_recalled_items) = recalled_items.itemno(indices);
+    recalls_items = recalled_items.itemno(indices);
+    recalls_item_numbers(idx,1:n_recalled_items) = recalls_items;
+    
 end
+
 
 %%% Use above matrices to get temporal/semantic clustering factors and
 %%% lag-CRP using Penn behavioral toolbox functions. Functions

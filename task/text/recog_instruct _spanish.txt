@@ -1,0 +1,9 @@
+En esta parte del experimento nos gustaría saber qué palabras se reconoce desde la sesión de hoy .
+
+Verá una lista de palabras que aparecen en la pantalla. Para cada palabra , por favor indique la mayor rapidez y precisión posible si te acuerdas de ver esa palabra en alguna de las listas de palabras que usted estudió en la actualidad.
+
+Pulse la tecla / si recuerdo haber visto la palabra .
+
+Pulse la tecla Z si no recuerdo ver la palabra .
+
+<<< Pulse Intro para empezar >>>

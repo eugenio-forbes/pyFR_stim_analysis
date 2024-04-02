@@ -1,0 +1,5 @@
+In this study, words will appear on the computer screen.  As each word is shown please say it aloud.
+
+After the last word in each list, you will see a series of math problems.  Please perform the math problems to the best of your ability.
+
+After the math problems, a row of asterisks (*******) will flash on the screen and you will hear a tone.  At this time, say as many words as you can remember from the list, IN ANY ORDER.  When you are done recalling, press the space bar.

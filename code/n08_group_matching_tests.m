@@ -1,18 +1,16 @@
 function n08_group_matching_tests(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-statistics_directory = fullfile(analysis_directory,'statistics/group_matching');
-plots_directory = fullfile(analysis_directory,'plots');
+list_directory = fullfile(root_directory,'lists');
+statistics_directory = fullfile(root_directory,'statistics/group_matching');
+exclusions_directory = fullfile(root_directory,'exclusion_lists');
+plots_directory = fullfile(root_directory,'plots');
 
 %%% Create directories if needed
 if ~isfolder(statistics_directory)

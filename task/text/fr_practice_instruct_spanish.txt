@@ -1,0 +1,7 @@
+En este estudio, nos gustaría ver qué tan bien usted recuerda listas de palabras al azar . En medio de las listas , se le dará la tarea de resolver los problemas de matemáticas en la forma " A + B + C =" , donde A , B y C son números enteros .
+
+Cuando ves a un problema de matemáticas , por favor, introduzca la respuesta mediante el teclado y luego presione la tecla ENTER . Puede utilizar la tecla RETROCESO si usted comete un error .
+
+Ahora tendrá la oportunidad de practicar la tarea de matemáticas . Considere esta sesión de práctica como una oportunidad para construir la velocidad sin sacrificar la precisión .
+
+Por favor, deje que el asistente de investigación saber cuando haya terminado de leer estas instrucciones.

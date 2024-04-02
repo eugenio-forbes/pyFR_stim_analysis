@@ -1,17 +1,14 @@
 #!/bin/bash
 
-# Bash script for running power analysis in the SLURM
+# Node start time, parent directory, and custom preferences for rereferencing,
+# denoising, clustering
 
-# Change to directory with analysis code
-ROOT_DIR="/base/directory/with/ANALYSIS_FOLDER"
-ANALYSIS_FOLDER="pyFR_stim_analysis"
+ROOT_DIR="/directory/to/pyFR_stim_analysis"
 
 cd $ROOT_DIR
-cd $ANALYSIS_FOLDER
 cd code
-
-# Load MATLAB module
-module load matlab/2020a
+module load matlab
 
 # Run MATLAB code without display
-matlab -nodesktop -nodisplay -singleCompThread -r "n18_power_analysis('$ROOT_DIR', '$ANALYSIS_FOLDER'); exit;"
+matlab -nodesktop -nodisplay -singleCompThread -r "n18_power_analysis('$ROOT_DIR'); exit;"
+

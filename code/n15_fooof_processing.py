@@ -12,15 +12,15 @@ import time
 # To fill in manually or receive input arguments
 if len(sys.argv) <= 1:
     event_type = 'encoding'
-    region_of_interest = 'hippocampus'
+    region_of_interset = 'hippocampus'
     fooof_mode = 'fooof'
 else:
-    event_type = sys.argv[2]
-    region_of_interest = sys.argv[3]
-    fooof_mode = sys.argv[4]
+    event_type = sys.argv[1]
+    region_of_interest = sys.argv[2]
+    fooof_mode = sys.argv[3]
 
 # Modify below to root directory this script should operate on
-root_directory = '/directory/with/analysis_folder/' + 'pyFR_stim_analysis'
+root_directory = '/project/TIBIR/Lega_lab/s427026/pyFR_stim_' + folder_name
 
 # Determine other directories based on input arguments. Create new directories if needed for saving locks and 
 list_directory = root_directory + '/lists'

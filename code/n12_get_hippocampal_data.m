@@ -1,19 +1,18 @@
 function n12_get_hippocampal_data(varargin)
 if isempty(varargin)
     %%% Directory information
-    root_directory = '/directory/with/analysis_folder';
-    analysis_folder_name = 'pyFR_stim_analysis';
+    root_directory = '/directory/to/pyFR_stim_analysis';
+    parpool_n = 16;
 else
     root_directory = varargin{1};
-    analysis_folder_name = varargin{2};
+    parpool_n = varargin{2};
 end
 
 %%% List directories
-analysis_directory = fullfile(root_directory,analysis_folder_name);
-list_directory = fullfile(analysis_directory,'lists');
-data_directory = fullfile(analysis_directory,'data');
-table_directory = fullfile(analysis_directory,'tables');
-error_directory = fullfile(analysis_directory,'error_logs');
+list_directory = fullfile(root_directory,'lists');
+data_directory = fullfile(root_directory,'data');
+table_directory = fullfile(root_directory,'tables');
+error_directory = fullfile(root_directory,'error_logs');
 if ~isfolder(table_directory)
     mkdir(table_directory);
 end
@@ -63,7 +62,7 @@ subject_list.stimulation_left = strcmp(subject_list.stimulation_hemisphere,'left
 %%%Initialize parpool if it hasn't been initialized
 pool_object = gcp('nocreate');
 if isempty(pool_object)
-    parpool(24);
+    parpool(parpool_n);
 end
 
 encoding_analysis_exclusions = false(n_electrodes,1);
