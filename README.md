@@ -1,5 +1,5 @@
 # pyFR_stim_analysis
-This repository contains code for analysis of University of Pennsylvania's free recall deep brain stimulation experiments.
+This repository contains code for performing analysis of the behavioral and electrophysiologic effects of DBS on University of Pennsylvania's "Restoring Active Memory" Free Recall experiments.
 - Analysis code is found in /code.
 - Word pool and task code is found in /task.
 - Some files necessary for running code and demographics found in /resources.
